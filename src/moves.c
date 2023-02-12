@@ -146,6 +146,32 @@ int perform_en_passant(char *board, char new_col, char new_row) {
     }
 }
 
+void promote_pawn(char *board, char col, char row, int turn) {
+    int run = true;
+    char new_piece;
+    while (run) {
+        printf("Enter a piece for pawn promotion [q, r, b, n]: ");
+        scanf(" %c", &new_piece);
+        switch(tolower(new_piece)) {
+            case 'q':
+            case 'r':
+            case 'b':
+            case 'n':
+                run = false;
+                break;
+            default:
+                printf("Not a valid piece. Try again\n");
+                break;
+        }
+    }
+    if (turn == WHITE_MOVE) {
+        new_piece = toupper(new_piece);
+    } else {
+        new_piece = tolower(new_piece);
+    }
+    set_piece_at_position(board, col, row, new_piece);
+}
+
 int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, int turn) {
     int vertical_distance = new_row - cur_row;
     if (abs(vertical_distance) > 1) {
@@ -191,7 +217,15 @@ int pawn_move(char *board, char cur_col, char cur_row, char new_col, char new_ro
             return false;
         }
     }
-    return linear_move(board, cur_col, cur_row, new_col, new_row);
+    int move = linear_move(board, cur_col, cur_row, new_col, new_row);
+    if (!move) {
+        return false;
+    }
+    if ((new_row == '8' && turn == WHITE_MOVE) ||
+        (new_row == '1' && turn == BLACK_MOVE)) {
+        promote_pawn(board, cur_col, cur_row, turn);
+    }
+    return true;
 }
 
 int knight_move(char *board, char cur_col, char cur_row, char new_col, char new_row) {

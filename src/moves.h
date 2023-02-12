@@ -25,6 +25,7 @@ int diagonal_move(char *board, char cur_col, char cur_row, char new_col, char ne
 
 void enable_en_passant(char cur_col, char cur_row, char new_col, char new_row);
 int perform_en_passant(char *board, char new_col, char new_row);
+void promote_pawn(char *board, char col, char row, int turn);
 
 int check_pawn_direction(int vertical_distance, int turn);
 int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, int turn);

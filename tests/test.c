@@ -15,6 +15,15 @@ char starting_board[8][8] = {
     {'r','n','b','q','k','b','n','r'}
 };
 
+void write_to_stdin(char *input) {
+    int p[2];
+    pipe(p);
+    dup2(p[0], STDIN_FILENO);
+    FILE *stdin_writer = fdopen(p[1], "w");
+    fputs(input, stdin_writer);
+    fclose(stdin_writer);
+}
+
 void test_piece_position() {
     char *board = &starting_board[0][0];
 
@@ -534,6 +543,36 @@ void test_en_passant_no() {
     TEST_ASSERT(move(board, 'c', '5', 'e', '6', WHITE_MOVE) == 0);
 }
 
+void test_pawn_promotion() {
+    char promotion_board[8][8] = {
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0, 'p', 0, 'p', 0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        {'P', 0, 'P', 0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 }
+    };
+    char *board = &promotion_board[0][0];
+    // queen
+    write_to_stdin("q");
+    TEST_ASSERT(move(board, 'a', '7', 'a', '8', WHITE_MOVE) == 1);
+    TEST_ASSERT(get_piece_at_position(board, 'a', '8') == 'Q');
+    // bishop
+    write_to_stdin("B");
+    TEST_ASSERT(move(board, 'b', '2', 'b', '1', BLACK_MOVE) == 1);
+    TEST_ASSERT(get_piece_at_position(board, 'b', '1') == 'b');
+    // rook
+    write_to_stdin("r");
+    TEST_ASSERT(move(board, 'c', '7', 'c', '8', WHITE_MOVE) == 1);
+    TEST_ASSERT(get_piece_at_position(board, 'c', '8') == 'R');
+    // knight
+    write_to_stdin("N");
+    TEST_ASSERT(move(board, 'd', '2', 'd', '1', BLACK_MOVE) == 1);
+    TEST_ASSERT(get_piece_at_position(board, 'd', '1') == 'n');
+}
+
 TEST_LIST = {
     { "Piece Position", test_piece_position },
     { "Type Position", test_type_position },
@@ -550,5 +589,6 @@ TEST_LIST = {
     { "Move Function", test_move_function },
     { "En Passant Positive", test_en_passant_yes },
     { "En Passant Negative", test_en_passant_no },
+    { "Pawn Promotion", test_pawn_promotion },
     { NULL, NULL }
 };
