@@ -55,7 +55,7 @@ int main() {
         printf("Next Move (%s): ", (turn == WHITE_MOVE) ? "White" : "Black");
         scanf(" %c%c %c%c", &cur_col, &cur_row, &new_col, &new_row);
 
-        if (move(board, cur_col, cur_row, new_col, new_row, turn)) {
+        if (move(board, tolower(cur_col), cur_row, tolower(new_col), new_row, turn)) {
             turn = (turn + 1) % 2;
         }
     } while (true);
