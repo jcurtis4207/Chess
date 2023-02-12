@@ -4,6 +4,11 @@ char en_passant_target_square[2] = {0,0};
 char en_passant_victim_square[2] = {0,0};
 int en_passant_time = 0;
 
+char white_can_castle_kingside = true;
+char white_can_castle_queenside = true;
+char black_can_castle_kingside = true;
+char black_can_castle_queenside = true;
+
 int is_same_color(char *board, char cur_col, char cur_row, char new_col, char new_row) {
     char current = get_piece_at_position(board, cur_col, cur_row);
     char new = get_piece_at_position(board, new_col, new_row);
@@ -81,7 +86,99 @@ int diagonal_move(char *board, char cur_col, char cur_row, char new_col, char ne
     return is_diagonal_clear(board, cur_col, cur_row, new_col, new_row);
 }
 
-int rook_move(char *board, char cur_col, char cur_row, char new_col, char new_row) {
+void disable_castle(char col, int turn) {
+    // Rook moves disables castling on that side
+    if (col == 'a' && turn == WHITE_MOVE) {
+        white_can_castle_queenside = false;
+    } else if (col == 'h' && turn == WHITE_MOVE) {
+        white_can_castle_kingside = false;
+    } else if (col == 'a' && turn == BLACK_MOVE) {
+        black_can_castle_queenside = false;
+    } else if (col == 'h' && turn == BLACK_MOVE) {
+        black_can_castle_kingside = false;
+    }
+    // King moves disables castling for that color
+    else if (turn == WHITE_MOVE) {
+        white_can_castle_kingside = false;
+        white_can_castle_queenside = false;
+    } else if (turn == BLACK_MOVE) {
+        black_can_castle_kingside = false;
+        black_can_castle_queenside = false;
+    }
+}
+
+int can_castle(char *board, char cur_col, char cur_row, char new_col, char new_row, int turn) {
+    // king and rook must not have moved
+    // and no pieces can be between the king and rook
+    if (turn == WHITE_MOVE) {
+        if (new_col == 'g') {
+            if (white_can_castle_kingside && is_row_clear(board, cur_col, cur_row, 'h', '1')) {
+                return true;
+            } else {
+                fprintf(stderr, "Illegal Move: White king cannot castle now\n");
+                return false;
+            }
+        } else if (new_col == 'c') {
+            if (white_can_castle_queenside && is_row_clear(board, cur_col, cur_row, 'a', '1')) {
+                return true;
+            } else {
+                fprintf(stderr, "Illegal Move: White king cannot castle now\n");
+                return false;
+            }
+        } else {
+            fprintf(stderr, "Illegal Move: king cannot more than 1 space\n");
+            return false;
+        }
+    } else {
+        if (new_col == 'g') {
+            if (black_can_castle_kingside && is_row_clear(board, cur_col, cur_row, 'h', '8')) {
+                return true;
+            } else {
+                fprintf(stderr, "Illegal Move: Black king cannot castle now\n");
+                return false;
+            }
+        } else if (new_col == 'c') {
+            if (black_can_castle_queenside && is_row_clear(board, cur_col, cur_row, 'a', '8')) {
+                return true;
+            } else {
+                fprintf(stderr, "Illegal Move: Black king cannot castle now\n");
+                return false;
+            }
+        } else {
+            fprintf(stderr, "Illegal Move: king cannot more than 1 space\n");
+            return false;
+        }
+    }
+}
+
+void castle_move_rook(char *board, char king_new_col, int turn) {
+    // white queenside
+    if (turn == WHITE_MOVE && king_new_col == 'c') {
+        set_piece_at_position(board, 'd', '1', 'R');
+        set_piece_at_position(board, 'a', '1', 0);
+    }
+    // white kingside
+    else if (turn == WHITE_MOVE && king_new_col == 'g') {
+        set_piece_at_position(board, 'f', '1', 'R');
+        set_piece_at_position(board, 'h', '1', 0);
+    }
+    // black queenside
+    else if (turn == BLACK_MOVE && king_new_col == 'c') {
+        set_piece_at_position(board, 'd', '8', 'r');
+        set_piece_at_position(board, 'a', '8', 0);
+    }
+    // black kingside
+    else if (turn == BLACK_MOVE && king_new_col == 'g') {
+        set_piece_at_position(board, 'f', '8', 'r');
+        set_piece_at_position(board, 'h', '8', 0);
+    } else {
+        fprintf(stderr, "Error castling rook\n");
+    }
+
+}
+
+int rook_move(char *board, char cur_col, char cur_row, char new_col, char new_row, int turn) {
+    disable_castle(cur_col, turn);
     return linear_move(board, cur_col, cur_row, new_col, new_row);
 }
 
@@ -97,17 +194,27 @@ int queen_move(char *board, char cur_col, char cur_row, char new_col, char new_r
     }
 }
 
-int king_move(char *board, char cur_col, char cur_row, char new_col, char new_row) {
+int king_move(char *board, char cur_col, char cur_row, char new_col, char new_row, int turn) {
     int vertical_distance = new_row - cur_row;
     int horizontal_distance = new_col - cur_col;
-    if (abs(horizontal_distance) > 1 || abs(vertical_distance) > 1) {
+    if (abs(vertical_distance) > 1) {
         fprintf(stderr, "Illegal Move: king cannot more than 1 space\n");
         return false;
+    } else if (abs(horizontal_distance) > 1) {
+        if (can_castle(board, cur_col, cur_row, new_col, new_row, turn)) {
+            castle_move_rook(board, new_col, turn);
+            disable_castle(0, turn);
+            return true;
+        } else {
+            return false;
+        }
     }
-    if (diagonal_move(board, cur_col, cur_row, new_col, new_row)) {
-        return true;
+    if (diagonal_move(board, cur_col, cur_row, new_col, new_row) ||
+        linear_move(board, cur_col, cur_row, new_col, new_row)) {
+            disable_castle(0, turn);
+            return true;
     } else {
-        return linear_move(board, cur_col, cur_row, new_col, new_row);
+        return false;
     }
 }
 
@@ -293,7 +400,7 @@ int is_legal_move(char *board, char cur_col, char cur_row, char new_col, char ne
     }
     switch(get_type_at_position(board, cur_col, cur_row)) {
         case TYPE_ROOK:
-            return rook_move(board, cur_col, cur_row, new_col, new_row);
+            return rook_move(board, cur_col, cur_row, new_col, new_row, turn);
             break;
         case TYPE_BISHOP:
             return bishop_move(board, cur_col, cur_row, new_col, new_row);
@@ -302,7 +409,7 @@ int is_legal_move(char *board, char cur_col, char cur_row, char new_col, char ne
             return queen_move(board, cur_col, cur_row, new_col, new_row);
             break;
         case TYPE_KING:
-            return king_move(board, cur_col, cur_row, new_col, new_row);
+            return king_move(board, cur_col, cur_row, new_col, new_row, turn);
             break;
         case TYPE_PAWN:
             return pawn_move(board, cur_col, cur_row, new_col, new_row, turn);
