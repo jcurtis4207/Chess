@@ -1,5 +1,9 @@
 #include "moves.h"
 
+char en_passant_target_square[2] = {0,0};
+char en_passant_victim_square[2] = {0,0};
+int en_passant_time = 0;
+
 int is_same_color(char *board, char cur_col, char cur_row, char new_col, char new_row) {
     char current = get_piece_at_position(board, cur_col, cur_row);
     char new = get_piece_at_position(board, new_col, new_row);
@@ -119,11 +123,36 @@ int check_pawn_direction(int vertical_distance, int turn) {
     }
 }
 
-int check_pawn_distance(char cur_row, int vertical_distance, int turn) {
+void enable_en_passant(char cur_col, char cur_row, char new_col, char new_row) {
+    // set en_passant_square to square that was jumped
+    // this is the target square for an attacking pawn on the next turn
+    char skipped_row = (new_row - cur_row) / 2 + cur_row;
+    en_passant_target_square[0] = cur_col;
+    en_passant_target_square[1] = skipped_row;
+    // this is the square of the piece that will be taken
+    en_passant_victim_square[0] = new_col;
+    en_passant_victim_square[1] = new_row;
+    en_passant_time = 2;
+}
+
+int perform_en_passant(char *board, char new_col, char new_row) {
+    if (en_passant_time > 0 &&
+        en_passant_target_square[0] == new_col &&
+        en_passant_target_square[1] == new_row) {
+            set_piece_at_position(board, en_passant_victim_square[0], en_passant_victim_square[1], 0);
+            return true;
+    } else {
+        return false;
+    }
+}
+
+int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, int turn) {
+    int vertical_distance = new_row - cur_row;
     if (abs(vertical_distance) > 1) {
         // can only move 2 spaces on first move
         if ((turn == WHITE_MOVE && cur_row == '2' && vertical_distance == 2) ||
             (turn == BLACK_MOVE && cur_row == '7' && vertical_distance == -2)) {
+                enable_en_passant(cur_col, cur_row, new_col, new_row);
                 return true;
         } else {
             fprintf(stderr, "Illegal Move: pawn cannot move more than 1 space after its first move\n");
@@ -139,6 +168,8 @@ int check_pawn_taking(char *board, char cur_col, char cur_row, char new_col, cha
     if (abs(new_col - cur_col) == 1 &&
         get_type_at_position(board, new_col, new_row) != TYPE_EMPTY &&
         !is_same_color(board, cur_col, cur_row, new_col, new_row)) {
+            return true;
+    } else if (perform_en_passant(board, new_col, new_row)) {
         return true;
     } else {
         fprintf(stderr, "Illegal Move: pawn cannot move horiztonally\n");
@@ -147,15 +178,13 @@ int check_pawn_taking(char *board, char cur_col, char cur_row, char new_col, cha
 }
 
 int pawn_move(char *board, char cur_col, char cur_row, char new_col, char new_row, int turn) {
-    int vertical_distance = new_row - cur_row;
-    int horizontal_distance = new_col - cur_col;
-    if (!check_pawn_direction(vertical_distance, turn)) {
+    if (!check_pawn_direction(new_row - cur_row, turn)) {
         return false;
     }
-    if (!check_pawn_distance(cur_row, vertical_distance, turn)) {
+    if (!check_pawn_distance(cur_col, cur_row, new_col, new_row, turn)) {
         return false;
     }
-    if (abs(horizontal_distance) > 0) {
+    if (abs(new_col - cur_col) > 0) {
         if (check_pawn_taking(board, cur_col, cur_row, new_col, new_row)) {
             return true;
         } else {
@@ -259,5 +288,6 @@ int move(char *board, char cur_col, char cur_row, char new_col, char new_row, in
     }
     set_piece_at_position(board, new_col, new_row, get_piece_at_position(board, cur_col, cur_row));
     set_piece_at_position(board, cur_col, cur_row, 0);
+    en_passant_time = (en_passant_time > 0) ? en_passant_time - 1 : 0;
     return true;
 }

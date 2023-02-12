@@ -451,25 +451,87 @@ void test_move_function() {
     char *board = &move_board[0][0];
 
     // bKnight to C3
-    TEST_CHECK(move(board, 'b', '1', 'c', '3', WHITE_MOVE));
-        TEST_CHECK(get_piece_at_position(board, 'b', '1') == 0);
-        TEST_CHECK(get_piece_at_position(board, 'c', '3') == 'N');
+    TEST_ASSERT(move(board, 'b', '1', 'c', '3', WHITE_MOVE));
+        TEST_ASSERT(get_piece_at_position(board, 'b', '1') == 0);
+        TEST_ASSERT(get_piece_at_position(board, 'c', '3') == 'N');
     // dPawn to D5
-    TEST_CHECK(move(board, 'd', '7', 'd', '5', BLACK_MOVE));
-        TEST_CHECK(get_piece_at_position(board, 'd', '7') == 0);
-        TEST_CHECK(get_piece_at_position(board, 'd', '5') == 'p');
+    TEST_ASSERT(move(board, 'd', '7', 'd', '5', BLACK_MOVE));
+        TEST_ASSERT(get_piece_at_position(board, 'd', '7') == 0);
+        TEST_ASSERT(get_piece_at_position(board, 'd', '5') == 'p');
     // bKnight takes D5
-    TEST_CHECK(move(board, 'c', '3', 'd', '5', WHITE_MOVE));
-        TEST_CHECK(get_piece_at_position(board, 'c', '3') == 0);
-        TEST_CHECK(get_piece_at_position(board, 'd', '5') == 'N');
+    TEST_ASSERT(move(board, 'c', '3', 'd', '5', WHITE_MOVE));
+        TEST_ASSERT(get_piece_at_position(board, 'c', '3') == 0);
+        TEST_ASSERT(get_piece_at_position(board, 'd', '5') == 'N');
     // cBishop to E6
-    TEST_CHECK(move(board, 'c', '8', 'e', '6', BLACK_MOVE));
-        TEST_CHECK(get_piece_at_position(board, 'c', '8') == 0);
-        TEST_CHECK(get_piece_at_position(board, 'e', '6') == 'b');
+    TEST_ASSERT(move(board, 'c', '8', 'e', '6', BLACK_MOVE));
+        TEST_ASSERT(get_piece_at_position(board, 'c', '8') == 0);
+        TEST_ASSERT(get_piece_at_position(board, 'e', '6') == 'b');
     // cBishop takes D5
-    TEST_CHECK(move(board, 'e', '6', 'd', '5', BLACK_MOVE));
-        TEST_CHECK(get_piece_at_position(board, 'e', '6') == 0);
-        TEST_CHECK(get_piece_at_position(board, 'd', '5') == 'b');
+    TEST_ASSERT(move(board, 'e', '6', 'd', '5', BLACK_MOVE));
+        TEST_ASSERT(get_piece_at_position(board, 'e', '6') == 0);
+        TEST_ASSERT(get_piece_at_position(board, 'd', '5') == 'b');
+}
+
+void test_en_passant_yes() {
+    char ep_board[8][8] = {
+        {'R','N','B','Q','K','B','N','R'},
+        {'P', 0, 'P','P','P','P','P','P'},
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0, 'p', 0,  0 },
+        { 0, 'P', 0,  0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        {'p','p','p','p','p', 0, 'p','p'},
+        {'r','n','b','q','k','b','n','r'}
+    };
+    char *board = &ep_board[0][0];
+    // white
+    move(board, 'c', '7', 'c', '5', BLACK_MOVE);
+    TEST_ASSERT(en_passant_target_square[0] == 'c' && en_passant_target_square[1] == '6');
+    TEST_ASSERT(en_passant_victim_square[0] == 'c' && en_passant_victim_square[1] == '5');
+    TEST_ASSERT(en_passant_time == 1);
+    TEST_ASSERT(move(board, 'b', '5', 'c', '6', WHITE_MOVE) == 1);
+    TEST_ASSERT(get_piece_at_position(board, 'c', '5') == 0);
+    TEST_ASSERT(en_passant_time == 0);
+    // black
+    move(board, 'e', '2', 'e', '4', WHITE_MOVE);
+    TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '3');
+    TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '4');
+    TEST_ASSERT(en_passant_time == 1);
+    TEST_ASSERT(move(board, 'f', '4', 'e', '3', BLACK_MOVE) == 1);
+    TEST_ASSERT(get_piece_at_position(board, 'e', '4') == 0);
+    TEST_ASSERT(en_passant_time == 0);
+}
+
+void test_en_passant_no() {
+    char ep_board[8][8] = {
+        {'R','N','B','Q','K','B','N','R'},
+        {'P', 0, 'P','P','P','P','P','P'},
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        { 0, 'P','P', 0,  0, 'p', 0,  0 },
+        { 0,  0,  0,  0,  0,  0,  0,  0 },
+        {'p','p','p','p','p', 0, 'p','p'},
+        {'r','n','b','q','k','b','n','r'}
+    };
+    char *board = &ep_board[0][0];
+    // only perform on next move
+    move(board, 'c', '7', 'c', '5', BLACK_MOVE);
+    TEST_ASSERT(en_passant_target_square[0] == 'c' && en_passant_target_square[1] == '6');
+    TEST_ASSERT(en_passant_victim_square[0] == 'c' && en_passant_victim_square[1] == '5');
+    move(board, 'a', '2', 'a', '3', WHITE_MOVE); // extra move
+    move(board, 'a', '7', 'a', '6', BLACK_MOVE); // extra move
+    TEST_ASSERT(en_passant_time == 0);
+    TEST_ASSERT(move(board, 'b', '5', 'c', '6', WHITE_MOVE) == 0);
+    // must be in same row
+    move(board, 'e', '2', 'e', '4', WHITE_MOVE);
+    TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '3');
+    TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '4');
+    TEST_ASSERT(move(board, 'f', '5', 'e', '3', BLACK_MOVE) == 0);
+    // must be in adjacent column
+    move(board, 'e', '7', 'e', '5', BLACK_MOVE);
+    TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '6');
+    TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '5');
+    TEST_ASSERT(move(board, 'c', '5', 'e', '6', WHITE_MOVE) == 0);
 }
 
 TEST_LIST = {
@@ -486,5 +548,7 @@ TEST_LIST = {
     { "Pawn Moves", test_pawn_moves },
     { "Knight Moves", test_knight_moves },
     { "Move Function", test_move_function },
+    { "En Passant Positive", test_en_passant_yes },
+    { "En Passant Negative", test_en_passant_no },
     { NULL, NULL }
 };

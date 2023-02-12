@@ -11,6 +11,10 @@ enum turn {
     BLACK_MOVE = 1
 };
 
+extern char en_passant_target_square[2];
+extern char en_passant_victim_square[2];
+extern int en_passant_time;
+
 int is_same_color(char *board, char cur_col, char cur_row, char new_col, char new_row);
 int is_column_clear(char *board, char cur_col, char cur_row, char new_col, char new_row);
 int is_row_clear(char *board, char cur_col, char cur_row, char new_col, char new_row);
@@ -19,8 +23,11 @@ int is_diagonal_clear(char *board, char cur_col, char cur_row, char new_col, cha
 int linear_move(char *board, char cur_col, char cur_row, char new_col, char new_row);
 int diagonal_move(char *board, char cur_col, char cur_row, char new_col, char new_row);
 
+void enable_en_passant(char cur_col, char cur_row, char new_col, char new_row);
+int perform_en_passant(char *board, char new_col, char new_row);
+
 int check_pawn_direction(int vertical_distance, int turn);
-int check_pawn_distance(char cur_row, int vertical_distance, int turn);
+int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, int turn);
 int check_pawn_taking(char *board, char cur_col, char cur_row, char new_col, char new_row);
 
 int rook_move(char *board, char cur_col, char cur_row, char new_col, char new_row);
