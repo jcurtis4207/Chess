@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <signal.h>
 #include "board.h"
 #include "moves.h"
 #include "ui.h"
@@ -9,6 +10,11 @@ void perform_pawn_promotion(char *board, char col, char row, int *turn) {
     get_pawn_promotion_input(&new_piece, *turn);
     set_piece_at_position(board, col, row, new_piece);
     *turn = (*turn + 1) % 2;
+}
+
+void signal_handler(int sig) {
+    destroy_ui();
+    exit(0);
 }
 
 int main() {
@@ -24,6 +30,7 @@ int main() {
     };
     char *board = &chess_board[0][0];
 
+    signal(SIGINT, signal_handler);
     init_ui();
 
     char cur_col, cur_row, new_col, new_row;
@@ -43,6 +50,5 @@ int main() {
         }
     } while (true);
 
-    destroy_ui();
     return 0;
 }
