@@ -14,6 +14,10 @@ void set_piece_at_position(char *board, char col, char row, char piece) {
 
 int get_type_at_position(char *board, char col, char row) {
     char piece = get_piece_at_position(board, col, row);
+    return get_type_from_char(piece);
+}
+
+int get_type_from_char(char piece) {
     switch(piece) {
         case 'r':
         case 'R':

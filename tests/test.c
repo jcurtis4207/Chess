@@ -15,15 +15,6 @@ char starting_board[8][8] = {
     {'r','n','b','q','k','b','n','r'}
 };
 
-void write_to_stdin(char *input) {
-    int p[2];
-    pipe(p);
-    dup2(p[0], STDIN_FILENO);
-    FILE *stdin_writer = fdopen(p[1], "w");
-    fputs(input, stdin_writer);
-    fclose(stdin_writer);
-}
-
 void test_piece_position() {
     char *board = &starting_board[0][0];
 
@@ -460,27 +451,27 @@ void test_move_function() {
     char *board = &move_board[0][0];
 
     TEST_CASE("Knight to C3");
-    TEST_ASSERT(move(board, 'b', '1', 'c', '3', WHITE_MOVE));
+    TEST_ASSERT(move_piece(board, 'b', '1', 'c', '3', WHITE_MOVE));
     TEST_ASSERT(get_piece_at_position(board, 'b', '1') == TYPE_EMPTY);
     TEST_ASSERT(get_piece_at_position(board, 'c', '3') == 'N');
 
     TEST_CASE("Pawn to D5");
-    TEST_ASSERT(move(board, 'd', '7', 'd', '5', BLACK_MOVE));
+    TEST_ASSERT(move_piece(board, 'd', '7', 'd', '5', BLACK_MOVE));
     TEST_ASSERT(get_piece_at_position(board, 'd', '7') == TYPE_EMPTY);
     TEST_ASSERT(get_piece_at_position(board, 'd', '5') == 'p');
 
     TEST_CASE("Knight takes Pawn on D5");
-    TEST_ASSERT(move(board, 'c', '3', 'd', '5', WHITE_MOVE));
+    TEST_ASSERT(move_piece(board, 'c', '3', 'd', '5', WHITE_MOVE));
     TEST_ASSERT(get_piece_at_position(board, 'c', '3') == TYPE_EMPTY);
     TEST_ASSERT(get_piece_at_position(board, 'd', '5') == 'N');
 
     TEST_CASE("Bishop to E6");
-    TEST_ASSERT(move(board, 'c', '8', 'e', '6', BLACK_MOVE));
+    TEST_ASSERT(move_piece(board, 'c', '8', 'e', '6', BLACK_MOVE));
     TEST_ASSERT(get_piece_at_position(board, 'c', '8') == TYPE_EMPTY);
     TEST_ASSERT(get_piece_at_position(board, 'e', '6') == 'b');
 
     TEST_CASE("Bishop takes Knight on D5");
-    TEST_ASSERT(move(board, 'e', '6', 'd', '5', BLACK_MOVE));
+    TEST_ASSERT(move_piece(board, 'e', '6', 'd', '5', BLACK_MOVE));
     TEST_ASSERT(get_piece_at_position(board, 'e', '6') == TYPE_EMPTY);
     TEST_ASSERT(get_piece_at_position(board, 'd', '5') == 'b');
 }
@@ -499,20 +490,20 @@ void test_en_passant_yes() {
     char *board = &ep_board[0][0];
 
     TEST_CASE("White en passant");
-    move(board, 'c', '7', 'c', '5', BLACK_MOVE);
+    move_piece(board, 'c', '7', 'c', '5', BLACK_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'c' && en_passant_target_square[1] == '6');
     TEST_ASSERT(en_passant_victim_square[0] == 'c' && en_passant_victim_square[1] == '5');
     TEST_ASSERT(en_passant_time == 1);
-    TEST_ASSERT(move(board, 'b', '5', 'c', '6', WHITE_MOVE) == 1);
+    TEST_ASSERT(move_piece(board, 'b', '5', 'c', '6', WHITE_MOVE) == 1);
     TEST_ASSERT(get_piece_at_position(board, 'c', '5') == TYPE_EMPTY);
     TEST_ASSERT(en_passant_time == 0);
 
     TEST_CASE("Black en passant");
-    move(board, 'e', '2', 'e', '4', WHITE_MOVE);
+    move_piece(board, 'e', '2', 'e', '4', WHITE_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '3');
     TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '4');
     TEST_ASSERT(en_passant_time == 1);
-    TEST_ASSERT(move(board, 'f', '4', 'e', '3', BLACK_MOVE) == 1);
+    TEST_ASSERT(move_piece(board, 'f', '4', 'e', '3', BLACK_MOVE) == 1);
     TEST_ASSERT(get_piece_at_position(board, 'e', '4') == TYPE_EMPTY);
     TEST_ASSERT(en_passant_time == 0);
 }
@@ -531,59 +522,25 @@ void test_en_passant_no() {
     char *board = &ep_board[0][0];
 
     TEST_CASE("En passant must occur immediately after opponent init");
-    move(board, 'c', '7', 'c', '5', BLACK_MOVE);
+    move_piece(board, 'c', '7', 'c', '5', BLACK_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'c' && en_passant_target_square[1] == '6');
     TEST_ASSERT(en_passant_victim_square[0] == 'c' && en_passant_victim_square[1] == '5');
-    move(board, 'a', '2', 'a', '3', WHITE_MOVE); // extra move
-    move(board, 'a', '7', 'a', '6', BLACK_MOVE); // extra move
+    move_piece(board, 'a', '2', 'a', '3', WHITE_MOVE); // extra move
+    move_piece(board, 'a', '7', 'a', '6', BLACK_MOVE); // extra move
     TEST_ASSERT(en_passant_time == 0);
-    TEST_ASSERT(move(board, 'b', '5', 'c', '6', WHITE_MOVE) == 0);
+    TEST_ASSERT(move_piece(board, 'b', '5', 'c', '6', WHITE_MOVE) == 0);
 
     TEST_CASE("En passant can only occur when pawns are on same rank");
-    move(board, 'e', '2', 'e', '4', WHITE_MOVE);
+    move_piece(board, 'e', '2', 'e', '4', WHITE_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '3');
     TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '4');
-    TEST_ASSERT(move(board, 'f', '5', 'e', '3', BLACK_MOVE) == 0);
+    TEST_ASSERT(move_piece(board, 'f', '5', 'e', '3', BLACK_MOVE) == 0);
 
     TEST_CASE("En passant can only occur when pawns are in adjacent columns");
-    move(board, 'e', '7', 'e', '5', BLACK_MOVE);
+    move_piece(board, 'e', '7', 'e', '5', BLACK_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '6');
     TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '5');
-    TEST_ASSERT(move(board, 'c', '5', 'e', '6', WHITE_MOVE) == 0);
-}
-
-void test_pawn_promotion() {
-    char promotion_board[8][8] = {
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        { 0, 'p', 0, 'p', 0,  0,  0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        {'P', 0, 'P', 0,  0,  0,  0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 }
-    };
-    char *board = &promotion_board[0][0];
-
-    TEST_CASE("Promote to Queen");
-    write_to_stdin("q");
-    TEST_ASSERT(move(board, 'a', '7', 'a', '8', WHITE_MOVE) == 1);
-    TEST_ASSERT(get_piece_at_position(board, 'a', '8') == 'Q');
-
-    TEST_CASE("Promote to Bishop");
-    write_to_stdin("B");
-    TEST_ASSERT(move(board, 'b', '2', 'b', '1', BLACK_MOVE) == 1);
-    TEST_ASSERT(get_piece_at_position(board, 'b', '1') == 'b');
-
-    TEST_CASE("Promote to Rook");
-    write_to_stdin("r");
-    TEST_ASSERT(move(board, 'c', '7', 'c', '8', WHITE_MOVE) == 1);
-    TEST_ASSERT(get_piece_at_position(board, 'c', '8') == 'R');
-
-    TEST_CASE("Promote to Knight");
-    write_to_stdin("N");
-    TEST_ASSERT(move(board, 'd', '2', 'd', '1', BLACK_MOVE) == 1);
-    TEST_ASSERT(get_piece_at_position(board, 'd', '1') == 'n');
+    TEST_ASSERT(move_piece(board, 'c', '5', 'e', '6', WHITE_MOVE) == 0);
 }
 
 void test_castle_kingside() {
@@ -600,21 +557,21 @@ void test_castle_kingside() {
     char *board = &castle_board[0][0];
 
     TEST_CASE("White blocked->no");
-    TEST_ASSERT(move(board, 'e', '1', 'g', '1', WHITE_MOVE) == false);
-    move(board, 'g', '1', 'h', '3', WHITE_MOVE);
+    TEST_ASSERT(move_piece(board, 'e', '1', 'g', '1', WHITE_MOVE) == false);
+    move_piece(board, 'g', '1', 'h', '3', WHITE_MOVE);
 
     TEST_CASE("White unblocked->yes");
-    TEST_ASSERT(move(board, 'e', '1', 'g', '1', WHITE_MOVE));
+    TEST_ASSERT(move_piece(board, 'e', '1', 'g', '1', WHITE_MOVE));
     TEST_CHECK(get_type_at_position(board, 'g', '1') == TYPE_KING);
     TEST_CHECK(get_type_at_position(board, 'f', '1') == TYPE_ROOK);
     TEST_CHECK(get_type_at_position(board, 'h', '1') == TYPE_EMPTY);
 
     TEST_CASE("Black blocked->no");
-    TEST_ASSERT(move(board, 'e', '8', 'g', '8', BLACK_MOVE) == false);
-    move(board, 'g', '8', 'h', '6', BLACK_MOVE);
+    TEST_ASSERT(move_piece(board, 'e', '8', 'g', '8', BLACK_MOVE) == false);
+    move_piece(board, 'g', '8', 'h', '6', BLACK_MOVE);
 
     TEST_CASE("Black unblocked->yes");
-    TEST_ASSERT(move(board, 'e', '8', 'g', '8', BLACK_MOVE));
+    TEST_ASSERT(move_piece(board, 'e', '8', 'g', '8', BLACK_MOVE));
     TEST_CHECK(get_type_at_position(board, 'g', '8') == TYPE_KING);
     TEST_CHECK(get_type_at_position(board, 'f', '8') == TYPE_ROOK);
     TEST_CHECK(get_type_at_position(board, 'h', '8') == TYPE_EMPTY);
@@ -634,21 +591,21 @@ void test_castle_queenside() {
     char *board = &castle_board[0][0];
 
     TEST_CASE("White blocked->no");
-    TEST_ASSERT(move(board, 'e', '1', 'c', '1', WHITE_MOVE) == false);
-    move(board, 'd', '1', 'd', '2', WHITE_MOVE);
+    TEST_ASSERT(move_piece(board, 'e', '1', 'c', '1', WHITE_MOVE) == false);
+    move_piece(board, 'd', '1', 'd', '2', WHITE_MOVE);
 
     TEST_CASE("White unblocked->yes");
-    TEST_ASSERT(move(board, 'e', '1', 'c', '1', WHITE_MOVE));
+    TEST_ASSERT(move_piece(board, 'e', '1', 'c', '1', WHITE_MOVE));
     TEST_CHECK(get_type_at_position(board, 'c', '1') == TYPE_KING);
     TEST_CHECK(get_type_at_position(board, 'd', '1') == TYPE_ROOK);
     TEST_CHECK(get_type_at_position(board, 'a', '1') == TYPE_EMPTY);
 
     TEST_CASE("Black blocked->no");
-    TEST_ASSERT(move(board, 'e', '8', 'c', '8', BLACK_MOVE) == false);
-    move(board, 'd', '8', 'd', '7', BLACK_MOVE);
+    TEST_ASSERT(move_piece(board, 'e', '8', 'c', '8', BLACK_MOVE) == false);
+    move_piece(board, 'd', '8', 'd', '7', BLACK_MOVE);
 
     TEST_CASE("Black unblocked->yes");
-    TEST_ASSERT(move(board, 'e', '8', 'c', '8', BLACK_MOVE));
+    TEST_ASSERT(move_piece(board, 'e', '8', 'c', '8', BLACK_MOVE));
     TEST_CHECK(get_type_at_position(board, 'c', '8') == TYPE_KING);
     TEST_CHECK(get_type_at_position(board, 'd', '8') == TYPE_ROOK);
     TEST_CHECK(get_type_at_position(board, 'a', '8') == TYPE_EMPTY);
@@ -668,16 +625,16 @@ void test_castle_negative() {
     char *board = &castle_board[0][0];
 
     TEST_CASE("Rook move prevents castle on that side");
-    move(board, 'a', '1', 'a', '2', WHITE_MOVE);
-    move(board, 'a', '2', 'a', '1', WHITE_MOVE);
-    TEST_CHECK(move(board, 'e', '1', 'c', '1', WHITE_MOVE) == false);
-    TEST_CHECK(move(board, 'e', '1', 'g', '1', WHITE_MOVE));
+    move_piece(board, 'a', '1', 'a', '2', WHITE_MOVE);
+    move_piece(board, 'a', '2', 'a', '1', WHITE_MOVE);
+    TEST_CHECK(move_piece(board, 'e', '1', 'c', '1', WHITE_MOVE) == false);
+    TEST_CHECK(move_piece(board, 'e', '1', 'g', '1', WHITE_MOVE));
 
     TEST_CASE("King move prevents castle on either side");
-    move(board, 'e', '8', 'e', '7', BLACK_MOVE);
-    move(board, 'e', '7', 'e', '8', BLACK_MOVE);
-    TEST_CHECK(move(board, 'e', '8', 'c', '8', BLACK_MOVE) == false);
-    TEST_CHECK(move(board, 'e', '8', 'g', '8', BLACK_MOVE) == false);
+    move_piece(board, 'e', '8', 'e', '7', BLACK_MOVE);
+    move_piece(board, 'e', '7', 'e', '8', BLACK_MOVE);
+    TEST_CHECK(move_piece(board, 'e', '8', 'c', '8', BLACK_MOVE) == false);
+    TEST_CHECK(move_piece(board, 'e', '8', 'g', '8', BLACK_MOVE) == false);
 }
 
 TEST_LIST = {
@@ -696,7 +653,6 @@ TEST_LIST = {
     { "Move Function", test_move_function },
     { "En Passant Positive", test_en_passant_yes },
     { "En Passant Negative", test_en_passant_no },
-    { "Pawn Promotion", test_pawn_promotion },
     { "Castle Short", test_castle_kingside },
     { "Castle Long", test_castle_queenside },
     { "Castle Negative", test_castle_negative },

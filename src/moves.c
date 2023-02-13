@@ -4,6 +4,8 @@ char en_passant_target_square[2] = {0,0};
 char en_passant_victim_square[2] = {0,0};
 int en_passant_time = 0;
 
+char error_message[100];
+
 char white_can_castle_kingside = true;
 char white_can_castle_queenside = true;
 char black_can_castle_kingside = true;
@@ -23,7 +25,7 @@ int is_column_clear(char *board, char cur_col, char cur_row, char new_col, char 
 
     while (cur_row != new_row) {
         if (get_piece_at_position(board, cur_col, cur_row) != TYPE_EMPTY) {
-            fprintf(stderr, "Illegal Move: column is not clear\n");
+            sprintf(error_message, "Illegal Move: column is not clear");
             return false;
         }
         cur_row = (direction > 0) ? cur_row + 1 : cur_row - 1;
@@ -37,7 +39,7 @@ int is_row_clear(char *board, char cur_col, char cur_row, char new_col, char new
 
     while (cur_col != new_col) {
         if (get_piece_at_position(board, cur_col, cur_row) != TYPE_EMPTY) {
-            fprintf(stderr, "Illegal Move: row is not clear\n");
+            sprintf(error_message, "Illegal Move: row is not clear");
             return false;
         }
         cur_col = (direction > 0) ? cur_col + 1 : cur_col - 1;
@@ -53,7 +55,7 @@ int is_diagonal_clear(char *board, char cur_col, char cur_row, char new_col, cha
 
     while (cur_col != new_col && cur_row != new_row) {
         if (get_piece_at_position(board, cur_col, cur_row) != TYPE_EMPTY) {
-            fprintf(stderr, "Illegal Move: diagonal is not clear\n");
+            sprintf(error_message, "Illegal Move: diagonal is not clear");
             return false;
         }
         cur_col = (col_direction > 0) ? cur_col + 1 : cur_col - 1;
@@ -65,8 +67,8 @@ int is_diagonal_clear(char *board, char cur_col, char cur_row, char new_col, cha
 int linear_move(char *board, char cur_col, char cur_row, char new_col, char new_row) {
     int vertical_distance = new_row - cur_row;
     int horizontal_distance = new_col - cur_col;
-    if (vertical_distance != 0 && horizontal_distance != 0){
-        fprintf(stderr, "Illegal Move: move is not linear\n");
+    if (vertical_distance != 0 && horizontal_distance != 0) {
+        sprintf(error_message, "Illegal Move: move is not linear");
         return false;
     }
     if (vertical_distance != 0) {
@@ -79,8 +81,8 @@ int linear_move(char *board, char cur_col, char cur_row, char new_col, char new_
 int diagonal_move(char *board, char cur_col, char cur_row, char new_col, char new_row) {
     int vertical_distance = new_row - cur_row;
     int horizontal_distance = new_col - cur_col;
-    if (abs(vertical_distance) != abs(horizontal_distance)){
-        fprintf(stderr, "Illegal Move: move is not diagonal\n");
+    if (abs(vertical_distance) != abs(horizontal_distance)) {
+        sprintf(error_message, "Illegal Move: move is not diagonal");
         return false;
     }
     return is_diagonal_clear(board, cur_col, cur_row, new_col, new_row);
@@ -115,18 +117,18 @@ int can_castle(char *board, char cur_col, char cur_row, char new_col, char new_r
             if (white_can_castle_kingside && is_row_clear(board, cur_col, cur_row, 'h', '1')) {
                 return true;
             } else {
-                fprintf(stderr, "Illegal Move: White king cannot castle now\n");
+                sprintf(error_message, "Illegal Move: White king cannot castle now");
                 return false;
             }
         } else if (new_col == 'c') {
             if (white_can_castle_queenside && is_row_clear(board, cur_col, cur_row, 'a', '1')) {
                 return true;
             } else {
-                fprintf(stderr, "Illegal Move: White king cannot castle now\n");
+                sprintf(error_message, "Illegal Move: White king cannot castle now");
                 return false;
             }
         } else {
-            fprintf(stderr, "Illegal Move: king cannot more than 1 space\n");
+            sprintf(error_message, "Illegal Move: king cannot more than 1 space");
             return false;
         }
     } else {
@@ -134,18 +136,18 @@ int can_castle(char *board, char cur_col, char cur_row, char new_col, char new_r
             if (black_can_castle_kingside && is_row_clear(board, cur_col, cur_row, 'h', '8')) {
                 return true;
             } else {
-                fprintf(stderr, "Illegal Move: Black king cannot castle now\n");
+                sprintf(error_message, "Illegal Move: Black king cannot castle now");
                 return false;
             }
         } else if (new_col == 'c') {
             if (black_can_castle_queenside && is_row_clear(board, cur_col, cur_row, 'a', '8')) {
                 return true;
             } else {
-                fprintf(stderr, "Illegal Move: Black king cannot castle now\n");
+                sprintf(error_message, "Illegal Move: Black king cannot castle now");
                 return false;
             }
         } else {
-            fprintf(stderr, "Illegal Move: king cannot more than 1 space\n");
+            sprintf(error_message, "Illegal Move: king cannot more than 1 space");
             return false;
         }
     }
@@ -172,7 +174,7 @@ void castle_move_rook(char *board, char king_new_col, int turn) {
         set_piece_at_position(board, 'f', '8', 'r');
         set_piece_at_position(board, 'h', '8', 0);
     } else {
-        fprintf(stderr, "Error castling rook\n");
+        sprintf(error_message, "Error castling rook");
     }
 
 }
@@ -198,7 +200,7 @@ int king_move(char *board, char cur_col, char cur_row, char new_col, char new_ro
     int vertical_distance = new_row - cur_row;
     int horizontal_distance = new_col - cur_col;
     if (abs(vertical_distance) > 1) {
-        fprintf(stderr, "Illegal Move: king cannot more than 1 space\n");
+        sprintf(error_message, "Illegal Move: king cannot more than 1 space");
         return false;
     } else if (abs(horizontal_distance) > 1) {
         if (can_castle(board, cur_col, cur_row, new_col, new_row, turn)) {
@@ -220,10 +222,10 @@ int king_move(char *board, char cur_col, char cur_row, char new_col, char new_ro
 
 int check_pawn_direction(int vertical_distance, int turn) {
     if (vertical_distance > 0 && turn == BLACK_MOVE) {
-        fprintf(stderr, "Illegal Move: pawn cannot move backwards\n");
+        sprintf(error_message, "Illegal Move: pawn cannot move backwards");
         return false;
     } else if (vertical_distance < 0 && turn == WHITE_MOVE) {
-        fprintf(stderr, "Illegal Move: pawn cannot move backwards\n");
+        sprintf(error_message, "Illegal Move: pawn cannot move backwards");
         return false;
     } else {
         return true;
@@ -253,32 +255,6 @@ int perform_en_passant(char *board, char new_col, char new_row) {
     }
 }
 
-void promote_pawn(char *board, char col, char row, int turn) {
-    int run = true;
-    char new_piece;
-    while (run) {
-        printf("Enter a piece for pawn promotion [q, r, b, n]: ");
-        scanf(" %c", &new_piece);
-        switch(tolower(new_piece)) {
-            case 'q':
-            case 'r':
-            case 'b':
-            case 'n':
-                run = false;
-                break;
-            default:
-                printf("Not a valid piece. Try again\n");
-                break;
-        }
-    }
-    if (turn == WHITE_MOVE) {
-        new_piece = toupper(new_piece);
-    } else {
-        new_piece = tolower(new_piece);
-    }
-    set_piece_at_position(board, col, row, new_piece);
-}
-
 int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, int turn) {
     int vertical_distance = new_row - cur_row;
     if (abs(vertical_distance) > 1) {
@@ -288,7 +264,7 @@ int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, 
                 enable_en_passant(cur_col, cur_row, new_col, new_row);
                 return true;
         } else {
-            fprintf(stderr, "Illegal Move: pawn cannot move more than 1 space after its first move\n");
+            sprintf(error_message, "Illegal Move: pawn cannot move more than 1 space after its first move");
             return false;
         }
     } else {
@@ -305,7 +281,7 @@ int check_pawn_taking(char *board, char cur_col, char cur_row, char new_col, cha
     } else if (perform_en_passant(board, new_col, new_row)) {
         return true;
     } else {
-        fprintf(stderr, "Illegal Move: pawn cannot move horiztonally\n");
+        sprintf(error_message, "Illegal Move: pawn cannot move horiztonally");
         return false;
     }
 }
@@ -330,7 +306,7 @@ int pawn_move(char *board, char cur_col, char cur_row, char new_col, char new_ro
     }
     if ((new_row == '8' && turn == WHITE_MOVE) ||
         (new_row == '1' && turn == BLACK_MOVE)) {
-        promote_pawn(board, cur_col, cur_row, turn);
+        return PAWN_PROMOTION;
     }
     return true;
 }
@@ -339,13 +315,13 @@ int knight_move(char *board, char cur_col, char cur_row, char new_col, char new_
     int vertical_distance = abs(new_row - cur_row);
     int horizontal_distance = abs(new_col - cur_col);
     if (vertical_distance == horizontal_distance) {
-        fprintf(stderr, "Illegal Move: knight cannot move diagonally\n");
+        sprintf(error_message, "Illegal Move: knight cannot move diagonally");
         return false;
     } else if (vertical_distance == 0 || horizontal_distance == 0) {
-        fprintf(stderr, "Illegal Move: knight cannot move linearly\n");
+        sprintf(error_message, "Illegal Move: knight cannot move linearly");
         return false;
     } else if (vertical_distance + horizontal_distance != 3) {
-        fprintf(stderr, "Illegal Move: knight must move 3 spaces\n");
+        sprintf(error_message, "Illegal Move: knight must move 3 spaces");
         return false;
     }
     return true;
@@ -354,7 +330,7 @@ int knight_move(char *board, char cur_col, char cur_row, char new_col, char new_
 int is_square_off_board(char cur_col, char cur_row, char new_col, char new_row) {
     if (cur_col < 'a' || cur_col > 'h' || cur_row < '1' || cur_row > '8' ||
         new_col < 'a' || new_col > 'h' || new_row < '1' || new_row > '8') {
-        fprintf(stderr, "Illegal Move: position outside of range\n");
+        sprintf(error_message, "Illegal Move: position outside of range");
         return true;
     } else {
         return false;
@@ -364,7 +340,7 @@ int is_square_off_board(char cur_col, char cur_row, char new_col, char new_row) 
 int is_current_square_empty(char *board, char cur_col, char cur_row) {
     char current_square = get_piece_at_position(board, cur_col, cur_row);
     if (current_square == TYPE_EMPTY) {
-        fprintf(stderr, "Illegal Move: no piece at current position\n");
+        sprintf(error_message, "Illegal Move: no piece at current position");
         return true;
     } else {
         return false;
@@ -374,10 +350,10 @@ int is_current_square_empty(char *board, char cur_col, char cur_row) {
 int is_current_square_opponent_piece(char *board, char cur_col, char cur_row, int turn) {
     char current_piece = get_piece_at_position(board, cur_col, cur_row);
     if (isupper(current_piece) && turn == BLACK_MOVE) {
-        fprintf(stderr, "Illegal Move: Black can't move White's piece\n");
+        sprintf(error_message, "Illegal Move: Black can't move White's piece");
         return true;
     } else if (!isupper(current_piece) && turn == WHITE_MOVE) {
-        fprintf(stderr, "Illegal Move: White can't move Black's piece\n");
+        sprintf(error_message, "Illegal Move: White can't move Black's piece");
         return true;
     } else {
         return false;
@@ -395,7 +371,7 @@ int is_legal_move(char *board, char cur_col, char cur_row, char new_col, char ne
         return false;
     }
     if (is_same_color(board, cur_col, cur_row, new_col, new_row)) {
-        fprintf(stderr, "Illegal Move: destination contains your piece\n");
+        sprintf(error_message, "Illegal Move: destination contains your piece");
         return false;
     }
     switch(get_type_at_position(board, cur_col, cur_row)) {
@@ -418,17 +394,18 @@ int is_legal_move(char *board, char cur_col, char cur_row, char new_col, char ne
             return knight_move(board, cur_col, cur_row, new_col, new_row);
             break;
         default:
-            fprintf(stderr, "something went wrong\n");
+            sprintf(error_message, "something went wrong\n");
             return false;
     }
 }
 
-int move(char *board, char cur_col, char cur_row, char new_col, char new_row, int turn) {
-    if (!is_legal_move(board, cur_col, cur_row, new_col, new_row, turn)) {
+int move_piece(char *board, char cur_col, char cur_row, char new_col, char new_row, int turn) {
+    int legal = is_legal_move(board, cur_col, cur_row, new_col, new_row, turn);
+    if (!legal) {
         return false;
     }
     set_piece_at_position(board, new_col, new_row, get_piece_at_position(board, cur_col, cur_row));
     set_piece_at_position(board, cur_col, cur_row, 0);
     en_passant_time = (en_passant_time > 0) ? en_passant_time - 1 : 0;
-    return true;
+    return legal;
 }

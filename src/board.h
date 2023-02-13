@@ -16,3 +16,4 @@ enum piece_type {
 char get_piece_at_position(char *board, char col, char row);
 void set_piece_at_position(char *board, char col, char row, char piece);
 int get_type_at_position(char *board, char col, char row);
+int get_type_from_char(char piece);

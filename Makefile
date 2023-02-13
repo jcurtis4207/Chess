@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -lncurses
 BIN=build/chess.bin
 MAIN=src/main.c
 SRC=src/moves.c src/board.c
@@ -9,8 +9,8 @@ TESTBIN=tests/test.bin
 
 all: $(BIN)
 
-$(BIN): $(OBJ) $(MAIN)
-	$(CC) $(CFLAGS) $(OBJ) $(MAIN) -o $@
+$(BIN): $(OBJ) $(MAIN) build/ui.o
+	$(CC) $(CFLAGS) $(OBJ) build/ui.o $(MAIN) -o $@
 
 build/%.o: src/%.c
 	@mkdir -p build

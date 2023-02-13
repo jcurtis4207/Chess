@@ -1,37 +1,14 @@
 #include <stdio.h>
 #include "board.h"
 #include "moves.h"
+#include "ui.h"
 
-void print_white_piece(char piece) {
-    printf("\033[30;107m%c \033[0m", piece);
-}
-
-void print_black_piece(char piece) {
-    printf("\033[97;40m%c \033[0m", toupper(piece));
-}
-
-void print_board(char *board) {
-    printf("\n");
-    int row_label = 8;
-    for (int row = NUM_ROWS - 1; row >= 0; row--) {
-        printf("%d ", row_label--);
-        for (int col = 0; col < NUM_ROWS; col++) {
-            char piece = board[row * NUM_ROWS + col];
-            if (piece == 0) {
-                printf("- ");
-            } else if (isupper(piece)) {
-                print_white_piece(piece);
-            } else {
-                print_black_piece(piece);
-            }
-        }
-        printf("\n");
-    }
-    printf("  ");
-    for (char c = 'a'; c <= 'h'; c++) {
-        printf("%c ", c);
-    }
-    printf("\n\n");
+void perform_pawn_promotion(char *board, char col, char row, int *turn) {
+    draw_board(board);
+    char new_piece;
+    get_pawn_promotion_input(&new_piece, *turn);
+    set_piece_at_position(board, col, row, new_piece);
+    *turn = (*turn + 1) % 2;
 }
 
 int main() {
@@ -47,18 +24,25 @@ int main() {
     };
     char *board = &chess_board[0][0];
 
+    init_ui();
+
     char cur_col, cur_row, new_col, new_row;
     int turn = WHITE_MOVE;
+
     do {
-        print_board(board);
-
-        printf("Next Move (%s): ", (turn == WHITE_MOVE) ? "White" : "Black");
-        scanf(" %c%c %c%c", &cur_col, &cur_row, &new_col, &new_row);
-
-        if (move(board, tolower(cur_col), cur_row, tolower(new_col), new_row, turn)) {
+        draw_board(board);
+        draw_prompt(turn);
+        read_input(&cur_col, &cur_row, &new_col, &new_row);
+        int result = move_piece(board, tolower(cur_col), cur_row, tolower(new_col), new_row, turn);
+        if (result == true) {
             turn = (turn + 1) % 2;
+        } else if (result == PAWN_PROMOTION) {
+            perform_pawn_promotion(board, new_col, new_row, &turn);
+        } else {
+            print_error(error_message);
         }
     } while (true);
 
+    destroy_ui();
     return 0;
 }
