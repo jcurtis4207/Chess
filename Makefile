@@ -20,7 +20,7 @@ run: $(BIN)
 	$(BIN)
 
 test: $(TESTBIN)
-	tests/test.bin 2>/dev/null
+	tests/test.bin
 
 $(TESTBIN): $(TESTS) $(OBJ)
 	$(CC) $(CLFAGS) $< $(OBJ) -o $@

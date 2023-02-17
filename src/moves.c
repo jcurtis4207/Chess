@@ -267,6 +267,9 @@ int check_pawn_distance(char cur_col, char cur_row, char new_col, char new_row, 
             sprintf(error_message, "Illegal Move: pawn cannot move more than 1 space after its first move");
             return false;
         }
+    } else if (abs(new_col - cur_col) > 1) {
+        sprintf(error_message, "Illegal Move: pawn cannot move horizontally");
+        return false;
     } else {
         return true;
     }
@@ -299,6 +302,10 @@ int pawn_move(char *board, char cur_col, char cur_row, char new_col, char new_ro
         } else {
             return false;
         }
+    }
+    if (get_type_at_position(board, new_col, new_row) != TYPE_EMPTY) {
+        sprintf(error_message, "Illegal Move: pawn cannot take vertically");
+        return false;
     }
     int move = linear_move(board, cur_col, cur_row, new_col, new_row);
     if (!move) {

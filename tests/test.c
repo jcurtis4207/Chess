@@ -337,11 +337,11 @@ void test_king_moves() {
 void test_pawn_moves() {
     char pawn_board[8][8] = {
         { 0,  0,  0,  0, 'b', 0,  0,  0 },
-        { 0, 'P', 0, 'P', 0,  0,  0,  0 },
-        {'P', 0,  0, 'N','b','b', 0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        { 0,  0,  0,  0,  0,  0,  0,  0 },
-        { 0,  0,  0, 'B','n', 0,  0, 'p'},
+        { 0, 'P','P','P', 0,  0, 'P', 0 },
+        {'P', 0,  0, 'N','b','b','B','B'},
+        { 0,  0, 'b', 0,  0,  0,  0,  0 },
+        { 0,  0, 'P', 0,  0,  0,  0,  0 },
+        { 0,  0, 'b','B','n', 0,  0, 'p'},
         { 0,  0,  0,  0, 'p', 0, 'p', 0 },
         { 0,  0,  0, 'B', 0,  0,  0,  0 }
     };
@@ -374,7 +374,11 @@ void test_pawn_moves() {
         {"d2", "e1", WHITE_MOVE, false, "white diagonal back take->no"},
         {"e7", "d6", BLACK_MOVE, true,  "black diagonal take->yes"},
         {"e7", "f7", BLACK_MOVE, false, "black diagonal no take->no"},
-        {"e7", "d8", BLACK_MOVE, false, "black diagonal back take->no"}
+        {"e7", "d8", BLACK_MOVE, false, "black diagonal back take->no"},
+        {"c5", "c6", WHITE_MOVE, false, "white take forward->no"},
+        {"g2", "g3", WHITE_MOVE, false, "white blocked forward->no"},
+        {"g2", "h3", WHITE_MOVE, false, "white diagonal blocked->no"},
+        {"c2", "c4", WHITE_MOVE, false, "white init 2 take->no"}
     };
 
     for (int i = 0; i < sizeof(vectors) / sizeof(vectors[0]); i++) {
@@ -528,19 +532,19 @@ void test_en_passant_no() {
     move_piece(board, 'a', '2', 'a', '3', WHITE_MOVE); // extra move
     move_piece(board, 'a', '7', 'a', '6', BLACK_MOVE); // extra move
     TEST_ASSERT(en_passant_time == 0);
-    TEST_ASSERT(move_piece(board, 'b', '5', 'c', '6', WHITE_MOVE) == 0);
+    TEST_ASSERT(move_piece(board, 'b', '5', 'c', '6', WHITE_MOVE) == false);
 
     TEST_CASE("En passant can only occur when pawns are on same rank");
     move_piece(board, 'e', '2', 'e', '4', WHITE_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '3');
     TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '4');
-    TEST_ASSERT(move_piece(board, 'f', '5', 'e', '3', BLACK_MOVE) == 0);
+    TEST_ASSERT(move_piece(board, 'f', '5', 'e', '3', BLACK_MOVE) == false);
 
     TEST_CASE("En passant can only occur when pawns are in adjacent columns");
     move_piece(board, 'e', '7', 'e', '5', BLACK_MOVE);
     TEST_ASSERT(en_passant_target_square[0] == 'e' && en_passant_target_square[1] == '6');
     TEST_ASSERT(en_passant_victim_square[0] == 'e' && en_passant_victim_square[1] == '5');
-    TEST_ASSERT(move_piece(board, 'c', '5', 'e', '6', WHITE_MOVE) == 0);
+    TEST_ASSERT(move_piece(board, 'c', '5', 'e', '6', WHITE_MOVE) == false);
 }
 
 void test_castle_kingside() {
